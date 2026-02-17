@@ -111,6 +111,18 @@ To defeat signature-based and heuristic analysis, PyLoggy incorporates a custom 
 
 ---
 
+## 📸 Screenshots
+
+![Screenshot 1](pics/Screenshot%20from%202026-02-17%2015-17-07.png)
+
+![Screenshot 2](pics/Screenshot%20from%202026-02-17%2015-19-18.png)
+
+![Screenshot 3](pics/Screenshot%20from%202026-02-17%2015-19-27.png)
+
+![Screenshot 4](pics/Screenshot%20from%202026-02-17%2015-28-05_3.png)
+
+![Screenshot 5](pics/Screenshot%20from%202026-02-17%2015-28-34.png)
+
 ## 📢 Legal Disclaimer & Educational Purpose
 
 **⚠️ IMPORTANT: PLEASE READ CAREFULLY ⚠️**
