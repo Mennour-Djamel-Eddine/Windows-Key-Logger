@@ -24,7 +24,7 @@ class SystemRecon:
             self.info['mac_address'] = ':'.join(re.findall('..', '%012x' % uuid.getnode()))
             self.info['processor'] = platform.processor()
             
-            # Try to get external IP using standard library (no requests dependency)
+            # Retrieve public IP address
             try:
                 with urllib.request.urlopen('https://api.ipify.org', timeout=5) as response:
                     self.info['external_ip'] = response.read().decode('utf-8')
@@ -42,7 +42,7 @@ class SystemRecon:
             return {"error": str(e)}
 
     def get_installed_software(self):
-        # Basic check for security software using wmic (Windows only)
+        # Enumerate installed security software via WMI
         security_software = []
         if platform.system() == "Windows":
             try:
@@ -79,4 +79,3 @@ class SystemRecon:
 
 if __name__ == "__main__":
     recon = SystemRecon()
-    print(recon.formatted_report())

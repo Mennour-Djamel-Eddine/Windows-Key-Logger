@@ -6,7 +6,7 @@ import ctypes
 from ctypes import wintypes
 import os
 
-# Define required Windows API structures and constants
+# Windows API constants
 CF_TEXT = 1
 GHND = 0x0042
 
@@ -43,25 +43,22 @@ class ClipboardMonitor:
 
         text = ""
         try:
-            # 1. Open Clipboard
+            # Open Clipboard
             if self.user32.OpenClipboard(None):
                 try:
-                    # 2. Get Handle to Clipboard Data (CF_TEXT for ANSI text)
+                    # Get Handle to Clipboard Data (CF_TEXT for ANSI text)
                     h_global = self.user32.GetClipboardData(CF_TEXT)
                     if h_global:
-                        # 3. Lock Global Memory to get pointer
+                        # Lock Global Memory to get pointer
                         p_global = self.kernel32.GlobalLock(h_global)
                         if p_global:
                             try:
-                                # 4. Read string from memory
                                 text = ctypes.c_char_p(p_global).value.decode('latin-1') 
                             except:
                                 pass
                             finally:
-                                # 5. Unlock Global Memory
                                 self.kernel32.GlobalUnlock(h_global)
                 finally:
-                    # 6. Close Clipboard
                     self.user32.CloseClipboard()
         except:
             pass
@@ -88,7 +85,6 @@ class ClipboardMonitor:
                 current_paste = self.get_clipboard_text()
                 if current_paste and current_paste != self.last_paste and current_paste.strip():
                     self.last_paste = current_paste
-                    # Formatted for the log
                     log_entry = f"\n[CLIPBOARD] Copied Data ({time.ctime()}):\n{current_paste}\n====================\n"
                     self.callback(log_entry)
             except Exception:

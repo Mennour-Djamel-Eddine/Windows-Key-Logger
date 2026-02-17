@@ -3,20 +3,20 @@ import subprocess
 import time
 from flask import Flask, request
 
-# Paths
+# Tor Hidden Service Configuration
 HS_DIR = "/var/lib/tor/auto_receiver/"
 TORRC_PATH = "/etc/tor/torrc"
 
 def ensure_dirs():
+    # Ensure Tor data directory exists with correct permissions
     if not os.path.exists(HS_DIR):
         os.makedirs(HS_DIR, exist_ok=True)
 
-    # Ensure the HS_DIR permissions are correct for Tor (debian-tor user)
-    # The initial os.makedirs might use root ownership if run with sudo.
+    # Set ownership to debian-tor (required for Tor service)
     subprocess.run(["sudo", "chown", "-R", "debian-tor:debian-tor", HS_DIR])
     subprocess.run(["sudo", "chmod", "700", HS_DIR])
     
-    # Ensure the received_files directory exists
+    # Ensure local storage directory exists
     received_dir = "/home/djamel/received_files"
     if not os.path.exists(received_dir):
         os.makedirs(received_dir, exist_ok=True)
@@ -27,42 +27,29 @@ def write_tor_config():
     with open(TORRC_PATH, "r") as f:
         lines = f.readlines()
 
-    # Aggressive cleanup: remove ALL lines related to our hidden service
-    # This includes:
-    # 1. Lines with our HiddenServiceDir
-    # 2. HiddenServicePort lines for our port (they'll be re-added)
-    # 3. ALL HiddenServiceAuthorizeClient lines (obsolete, remove them all)
-    # 4. Comment lines that mention "Auto-generated" or "hidden service" (likely ours)
-    
+    # Clean up previous hidden service configurations
     new_lines = []
     i = 0
     while i < len(lines):
         line = lines[i]
         stripped = line.strip()
         
-        # Skip our HiddenServiceDir line
+        # Skip existing HiddenServiceDir block
         if f"HiddenServiceDir {HS_DIR}" in line:
             i += 1
-            # Also skip the next few lines if they're part of our config block
-            # (HiddenServicePort, HiddenServiceAuthorizeClient, or related comments)
             while i < len(lines):
                 next_stripped = lines[i].strip()
-                # Skip HiddenServicePort (we'll add it back)
                 if next_stripped.startswith("HiddenServicePort"):
                     i += 1
                     continue
-                # Skip ALL HiddenServiceAuthorizeClient lines (obsolete option)
                 if next_stripped.startswith("HiddenServiceAuthorizeClient"):
                     i += 1
                     continue
-                # Skip comment lines that are likely part of our block
                 if next_stripped.startswith("#") and ("Auto-generated" in lines[i] or "hidden service" in lines[i].lower()):
                     i += 1
                     continue
-                # Stop if we hit a blank line or non-HiddenService line
                 if next_stripped == "" or (not next_stripped.startswith("#") and not next_stripped.startswith("HiddenService")):
                     break
-                # Otherwise, might be another HiddenService line, stop here
                 break
             continue
         
@@ -84,8 +71,8 @@ def write_tor_config():
     with open(TORRC_PATH, "w") as f:
         f.writelines(new_lines)
     
-    # Add our config block (simple hidden service, no client authorization)
-    config_block = f"""# Auto-generated hidden service
+    # Append new hidden service configuration
+    config_block = f"""# Hidden Service for Receiver
 HiddenServiceDir {HS_DIR}
 HiddenServicePort 80 127.0.0.1:5000
 """
@@ -108,12 +95,9 @@ HiddenServicePort 80 127.0.0.1:5000
             has_real_error = True
             error_message = "Orphaned HiddenServicePort lines detected"
         elif "Failed to parse/validate config" in result.stdout:
-            # Check if it's just the ownership warning (expected when running as root)
+            # Ignore ownership warnings when running verification as root
             if "is not owned by this user" in result.stdout:
-                # This is just a warning when running tor --verify-config as root
-                # It's not a real error - Tor service runs as debian-tor and will work fine
                 print("Note: Ownership warning is expected when verifying config as root.")
-                print("Tor service runs as debian-tor and will work correctly.")
             else:
                 has_real_error = True
                 error_message = "Configuration parsing failed"
@@ -171,9 +155,8 @@ def check_tor_logs():
         print("Could not retrieve Tor logs")
 
 def restart_tor():
-    # Hidden services typically require a full restart, not just a reload
-    # Reload (SIGHUP) often doesn't pick up new hidden service configurations
-    print("Restarting Tor service (full restart required for hidden service changes)...")
+    # Full restart required for Hidden Service configuration changes
+    print("Restarting Tor service...")
     result = subprocess.run(["sudo", "systemctl", "restart", "tor"], capture_output=True, text=True)
     if result.returncode != 0:
         print(f"Warning: Tor restart returned code {result.returncode}")
@@ -216,7 +199,6 @@ def start_receiver():
     def receive():
         data = request.get_data()
         
-        # --- MODIFICATION START ---
         import datetime
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = f"received_data_{timestamp}.bin"
@@ -229,7 +211,6 @@ def start_receiver():
         except Exception as e:
             print(f"Error saving data: {e}")
             return "Server Error", 500
-        # --- MODIFICATION END ---
         
         return "OK", 200
     
@@ -301,7 +282,5 @@ if __name__ == "__main__":
     print("===== SHARE THIS WITH THE SENDER =====")
     print("Onion address:", onion)
     print("=======================================")
-    print("\nNote: This is a public hidden service (no client authorization).")
-    print("Anyone with the onion address can access it.")
 
     start_receiver()

